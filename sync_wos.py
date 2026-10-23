@@ -7,7 +7,7 @@ Domain: https://zxw.ac.cn/
 
 Workflow Architecture:
 1. Image Extraction:
-   - Reads 'DOI' and '图片链接' from '朱兴旺文章_完整整合版.xlsx'
+   - Reads 'DOI' and '图片链接' from '朱兴旺文章_完整整合版.xlsx' ONLY
    - Automatically populates and updates 'doi_image_map.json'
    - Uses 'doi_image_map.json' to attach TOC images to WoS publications
 2. Strict Representative Papers Control:
@@ -16,7 +16,12 @@ Workflow Architecture:
 3. Academic Badges:
    - ESI TOP 1% loaded from 'esi_top_1_percent.txt'
    - Corr./First Author loaded from 'corresponding_titles.txt' + author string analysis
-4. Official Clarivate WoS Starter API Querying:
+4. AuthorKeywords-Driven Deep Topic Categorization:
+   - Directly analyzes Title + Clarivate WoS official Author Keywords
+   - Standard 9 Topics strictly ordered:
+     Photocatalysis, CO2 Reduction, 2D Materials, H2 Evolution, N2 Conversion,
+     Metal Oxides, Environmental Remediation, Defect Engineering, Other Research.
+5. Official Clarivate WoS Starter API Querying:
    - Pulls 146+ publications directly with official citation counts
    - Crossref caching for volume and page enrichment
 """
@@ -55,6 +60,19 @@ ESI_FILE = os.path.join(BASE_DIR, "esi_top_1_percent.txt")
 CORR_FILE = os.path.join(BASE_DIR, "corresponding_titles.txt")
 CROSSREF_CACHE_FILE = os.path.join(BASE_DIR, "crossref_cache.json")
 OUTPUT_JS_FILE = os.path.join(BASE_DIR, "publications_data.js")
+
+# Topic Priority Order
+TOPIC_ORDER = [
+    'Photocatalysis',
+    'CO2 Reduction',
+    '2D Materials',
+    'H2 Evolution',
+    'N2 Conversion',
+    'Metal Oxides',
+    'Environmental Remediation',
+    'Defect Engineering',
+    'Other Research'
+]
 
 # Journal Top Tiers & Priority
 HIGH_IMPACT_JOURNALS = [
@@ -123,41 +141,80 @@ def get_journal_info(journal_str):
             return short_j, is_top
     return "", False
 
-def refined_topics(title):
-    t = title.lower()
+def refined_topics(title, keywords_list=None):
+    """
+    Categorizes topics directly from Title + Clarivate WoS official Author Keywords.
+    """
+    clean_t = clean_html_tags(title)
+    kw_str = " ".join(keywords_list) if keywords_list else ""
+    combined = (clean_t + " " + kw_str).lower()
     topics = []
-    if (re.search(r'\bco2\b', t) or 'carbon dioxide' in t or 'photoreduction' in t or 
-        'co2rr' in t or 'reduction of co2' in t or 'co2 conversion' in t or 'co2 photoreduction' in t or
-        'co2 capture' in t or 'bicarbonate' in t):
+
+    # 1. Photocatalysis (光催化)
+    if ('photocataly' in combined or 'photo-cataly' in combined or 'photoreduction' in combined or 
+        'photo-oxidation' in combined or 'photooxidation' in combined or 'photoinduced' in combined):
+        topics.append("Photocatalysis")
+
+    # 2. CO2 Reduction
+    if (re.search(r'\bco2\b', combined) or 'carbon dioxide' in combined or 'photoreduction' in combined or 
+        'co2rr' in combined or 'reduction of co2' in combined or 'co2 conversion' in combined or 
+        'co2 photoreduction' in combined or 'co2 capture' in combined or 'bicarbonate' in combined or
+        'syngas' in combined or 'reverse water gas shift' in combined or 'rwgs' in combined or
+        'co 2' in combined):
         topics.append("CO2 Reduction")
-    if ('black phosphorus' in t or re.search(r'\bbp\b', t) or 'phosphorene' in t or 
-        'g-c3n4' in t or 'carbon nitride' in t or 'mxene' in t or '2d' in t or 
-        'nanosheet' in t or 'ultrathin' in t or 'two-dimensional' in t or 'mos2' in t or 'graphene' in t):
-        topics.append("Black Phosphorus & 2D Materials")
-    if ('oxide' in t or 'oxides' in t or 'bismuth' in t or re.search(r'\bbi\d', t) or re.search(r'\bbio[a-z0-9]', t) or
-        'tio2' in t or 'titanium' in t or 'mil-125' in t or 'in2o3' in t or 'w18o49' in t or 
-        'wo3' in t or 'cds' in t or 'zno' in t or 'fe2o3' in t or 'cofe2o4' in t or 'mof' in t or
-        'heterojunction' in t or 'heterostructure' in t or 'schottky' in t):
-        topics.append("Metal Oxides")
-    t_no_cn = t.replace('carbon nitride', '').replace('carbon nitrides', '')
-    if (re.search(r'\bn2\b', t_no_cn) or 'nitrogen reduction' in t or 'nitrogen fixation' in t or 
-        'n2 reduction' in t or 'n2-to-nh3' in t or 'nitrate' in t or 'nitrite' in t or 
-        'ammonia' in t or re.search(r'\bnh3\b', t_no_cn)):
-        topics.append("N2 Conversion")
-    if ('hydrogen' in t or re.search(r'\bher\b', t) or 'water splitting' in t or 
-        'water photoreduction' in t or 'h2 evolution' in t or 'h2 generation' in t or 
-        'h2 production' in t or re.search(r'\bh2\b', t)):
+
+    # 3. 2D Materials (formerly Black Phosphorus & 2D Materials)
+    if ('black phosphorus' in combined or re.search(r'\bbp\b', combined) or 'phosphorene' in combined or 
+        'g-c3n4' in combined or 'carbon nitride' in combined or 'c3n4' in combined or 'mxene' in combined or 
+        'mxenes' in combined or '2d' in combined or 'nanosheet' in combined or 'nanosheets' in combined or 
+        'ultrathin' in combined or 'two-dimensional' in combined or 'mos2' in combined or 'graphene' in combined or 
+        'atomic layers' in combined or 'c4n3' in combined):
+        topics.append("2D Materials")
+
+    # 4. H2 Evolution
+    if ('hydrogen' in combined or re.search(r'\bher\b', combined) or 'water splitting' in combined or 
+        'water photoreduction' in combined or 'h2 evolution' in combined or 'h2 generation' in combined or 
+        'h2 production' in combined or re.search(r'\bh2\b', combined) or 'water oxidation' in combined or
+        'overall water splitting' in combined or re.search(r'\boer\b', combined) or 'h-2 evolution' in combined or
+        'oxygen evolution reaction' in combined):
         topics.append("H2 Evolution")
-    if ('degradation' in t or 'removal' in t or 'fenton' in t or 'peroxymonosulfate' in t or 
-        re.search(r'\bpms\b', t) or 'pollutant' in t or 'tetracycline' in t or 'antibiotic' in t or 
-        'bpa' in t or 'bisphenol' in t or 'rhodamine' in t or 'methylene blue' in t or 
-        'microplastics' in t or 'purification' in t or 'seawater purification' in t or 'sensor' in t or 'sensing' in t):
+
+    # 5. N2 Conversion
+    t_no_cn = combined.replace('carbon nitride', '').replace('carbon nitrides', '').replace('g-c3n4', '').replace('c3n4', '')
+    if (re.search(r'\bn2\b', t_no_cn) or 'nitrogen reduction' in t_no_cn or 'nitrogen fixation' in t_no_cn or 
+        'n2 reduction' in t_no_cn or 'n2-to-nh3' in t_no_cn or 'nitrate' in t_no_cn or 'nitrite' in t_no_cn or 
+        'ammonia' in t_no_cn or re.search(r'\bnh3\b', t_no_cn) or 'urea synthesis' in t_no_cn):
+        topics.append("N2 Conversion")
+
+    # 6. Metal Oxides
+    if ('oxide' in combined or 'oxides' in combined or 'bismuth' in combined or re.search(r'\bbi\d', combined) or 
+        re.search(r'\bbio[a-z0-9]', combined) or 'tio2' in combined or 'titanium' in combined or 
+        'mil-125' in combined or 'in2o3' in combined or 'w18o49' in combined or 'wo3' in combined or 
+        'cds' in combined or 'zno' in combined or 'fe2o3' in combined or 'cofe2o4' in combined or 
+        'mof' in combined or 'heterojunction' in combined or 'heterostructure' in combined or 
+        'schottky' in combined or 'sb2wo6' in combined or 'znin2s4' in combined or 'layered double hydroxide' in combined or
+        'ldh' in combined or 'co3o4' in combined or 'metal-organic frameworks' in combined):
+        topics.append("Metal Oxides")
+
+    # 7. Environmental Remediation
+    if ('degradation' in combined or 'removal' in combined or 'fenton' in combined or 'peroxymonosulfate' in combined or 
+        re.search(r'\bpms\b', combined) or 'pollutant' in combined or 'tetracycline' in combined or 'antibiotic' in combined or 
+        'bpa' in combined or 'bisphenol' in combined or 'rhodamine' in combined or 'methylene blue' in combined or 
+        'microplastics' in combined or 'purification' in combined or 'seawater purification' in combined or 
+        'sensor' in combined or 'sensing' in combined or 'advanced oxidation' in combined):
         topics.append("Environmental Remediation")
-    if ('biomass' in t or 'cellulose' in t or 'lignin' in t or 'glucose' in t or 
-        'xylose' in t or 'furfural' in t or 'valorization' in t or 'chitosan' in t):
-        topics.append("Biomass Valorization")
+
+    # 8. Defect Engineering (formerly Phase & Defect Engineering)
+    if ('defect engineering' in combined or 'defect-engineering' in combined or 'phase engineering' in combined or 
+        'oxygen vacancy' in combined or 'oxygen vacancies' in combined or 'crystal phase' in combined or 
+        'phase transition' in combined or 'carbon vacancy' in combined or 'heterophase' in combined or 'defective' in combined):
+        topics.append("Defect Engineering")
+
     if not topics:
         topics.append("Other Research")
+
+    # Sort topics by specified order
+    topics.sort(key=lambda x: TOPIC_ORDER.index(x) if x in TOPIC_ORDER else 99)
     return topics
 
 def is_first_author(authors_str):
@@ -196,24 +253,19 @@ def sync_images_from_excel_to_json():
                 elif '图片链接' in h_str or 'img' in h_str:
                     col_img = idx
 
-            new_images_count = 0
             for row in sheet.iter_rows(min_row=2, values_only=True):
                 if not row or len(row) <= col_doi:
                     continue
                 doi = clean_doi(row[col_doi]) if col_doi < len(row) else ""
                 img = str(row[col_img]).strip() if col_img < len(row) and row[col_img] else ""
                 if doi and img:
-                    if doi not in image_map or image_map[doi] != img:
-                        image_map[doi] = img
-                        new_images_count += 1
+                    image_map[doi] = img
 
             with open(IMAGE_MAP_FILE, 'w', encoding='utf-8') as f:
                 json.dump(image_map, f, ensure_ascii=False, indent=2)
             print(f"[Image Sync] Synced {len(image_map)} image links into {os.path.basename(IMAGE_MAP_FILE)} (from {os.path.basename(MASTER_EXCEL_FILE)})")
         except Exception as e:
             print(f"[Warning] Failed to sync images from Excel: {e}")
-    else:
-        print(f"[Notice] {os.path.basename(MASTER_EXCEL_FILE)} not found. Using existing {os.path.basename(IMAGE_MAP_FILE)}.")
 
     return image_map
 
@@ -232,8 +284,6 @@ def load_selected_dois():
                 if d:
                     selected.add(d)
         print(f"[Config] Loaded {len(selected)} representative papers strictly from {os.path.basename(SELECTED_FILE)}")
-    else:
-        print(f"[Warning] {os.path.basename(SELECTED_FILE)} not found!")
     return selected
 
 def load_esi_dois():
@@ -251,8 +301,6 @@ def load_esi_dois():
                 if d:
                     esi.add(d)
         print(f"[Config] Loaded {len(esi)} ESI Top 1% DOIs from {os.path.basename(ESI_FILE)}")
-    else:
-        print(f"[Warning] {os.path.basename(ESI_FILE)} not found!")
     return esi
 
 def load_corr_titles():
@@ -268,8 +316,6 @@ def load_corr_titles():
                     continue
                 corr_titles.append(normalize_title(line_str))
         print(f"[Config] Loaded {len(corr_titles)} corresponding author titles from {os.path.basename(CORR_FILE)}")
-    else:
-        print(f"[Warning] {os.path.basename(CORR_FILE)} not found!")
     return corr_titles
 
 MONTH_MAP = {
@@ -354,7 +400,7 @@ def run_sync():
     print("🚀 LAP Lab (zxw.ac.cn) Web of Science Official Auto-Sync Engine")
     print("=" * 70)
 
-    # 1. Extract DOI + 图片链接 from Excel -> doi_image_map.json
+    # 1. Extract DOI + 图片链接 from Excel -> doi_image_map.json ONLY
     image_map = sync_images_from_excel_to_json()
 
     # 2. Load Selected DOIs strictly from selected_doi.txt
@@ -404,9 +450,7 @@ def run_sync():
         # Journal / Source
         src = h.get('source', {})
         raw_journal = src.get('sourceTitle', '')
-        # Convert journal from ALL CAPS to Title Case nicely
         journal = ' '.join([w.capitalize() if w.lower() not in ['and', 'of', 'for', 'in', 'on', 'the', '&'] else w.lower() for w in raw_journal.split()])
-        # Fix specific uppercase acronyms
         journal = re.sub(r'\bAcs\b', 'ACS', journal)
         journal = re.sub(r'\bRsc\b', 'RSC', journal)
         journal = re.sub(r'\bAiche\b', 'AIChE', journal)
@@ -440,7 +484,7 @@ def run_sync():
         # High Impact Journal detection
         short_journal, _ = get_journal_info(journal)
 
-        # Representative / Selected Paper: STRICTLY controlled by selected_doi.txt (no auto additions!)
+        # Representative / Selected Paper: STRICTLY controlled by selected_doi.txt
         is_sel = (doi in selected_dois)
 
         # Highly Cited ESI TOP 1%
@@ -463,8 +507,11 @@ def run_sync():
                 wos_citations = cite_entry.get('count', 0)
                 break
 
-        # Topics
-        topics = refined_topics(title)
+        # Author Keywords directly from WoS
+        author_kws = h.get('keywords', {}).get('authorKeywords', [])
+
+        # Match topics directly using Title + WoS official Author Keywords
+        topics = refined_topics(title, author_kws)
 
         articles.append({
             'year': year,
