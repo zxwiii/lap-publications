@@ -2,13 +2,15 @@ name: Weekly WoS Publications Auto-Sync
 
 on:
   schedule:
-    # Runs at 00:00 UTC (08:00 AM Beijing Time) every Monday
+    # 设定每周一早晨 08:00（北京时间）自动运行
     - cron: '0 0 * * 1'
   workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -34,8 +36,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add publications_data.js crossref_cache.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-sync publications from Web of Science [$(date +'%Y-%m-%d')]" && git push)
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes detected. Working tree is completely clean."
+          else
+            git commit -m "Auto-sync publications from Web of Science [$(date +'%Y-%m-%d')]"
+            git push origin HEAD:main || git push
+          fi
 
       - name: Mirror and Sync to Gitee
         env:
@@ -45,6 +52,7 @@ jobs:
         run: |
           if [ -n "$GITEE_TOKEN" ] && [ -n "$GITEE_USER" ]; then
             echo "Syncing repository to Gitee ($GITEE_USER/$GITEE_REPO)..."
+            git push --force "https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/${GITEE_REPO}.git" HEAD:main || \
             git push --force "https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/${GITEE_REPO}.git" HEAD:master
             echo "Successfully mirrored to Gitee!"
           else
