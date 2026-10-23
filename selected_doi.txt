@@ -1,0 +1,11 @@
+# Selected Representative Papers DOIs (One per line)
+10.1002/advs.202516096
+10.1002/anie.202517121
+10.1021/acscatal.5c04589
+10.1039/d5cc01274k
+10.1016/j.apcatb.2024.124050
+10.1021/acscatal.4c01725
+10.1021/acscatal.4c01449
+10.1016/j.cej.2022.138392
+10.1002/advs.202307192
+10.1039/d2ta06939c
