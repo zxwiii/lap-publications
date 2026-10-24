@@ -2,8 +2,8 @@ name: Weekly WoS Publications Auto-Sync
 
 on:
   schedule:
-    # Runs at 00:00 UTC (08:00 AM Beijing Time) every Monday
-    - cron: '0 0 * * 1'
+    # Runs at 00:00 UTC (01:00 AM Beijing Time) every Monday
+    - cron: '0 17 * * *'
   workflow_dispatch:
 
 jobs:
