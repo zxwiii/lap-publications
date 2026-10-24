@@ -2,7 +2,7 @@ name: Weekly WoS Publications Auto-Sync
 
 on:
   schedule:
-    # 设定每周一早晨 08:00（北京时间）自动运行
+    # Runs at 00:00 UTC (08:00 AM Beijing Time) every Monday
     - cron: '0 0 * * 1'
   workflow_dispatch:
 
@@ -28,7 +28,7 @@ jobs:
 
       - name: Run WoS Sync Engine
         env:
-          WOS_API_KEY: ${{ secrets.WOS_API_KEY || 'a5650a3cf00489bdd8d41011a3eca36de7c668de' }}
+          WOS_API_KEY: ${{ secrets.WOS_API_KEY }}
         run: |
           python sync_wos.py
 
