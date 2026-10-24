@@ -1,0 +1,15 @@
+# Sensitive keys and secrets
+wos_api_key.txt
+.wos_key
+*.key
+.env
+.env.*
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Local system files
+Thumbs.db
+.DS_Store
+~$*.xlsx

@@ -47,7 +47,19 @@ if BASE_DIR:
     os.chdir(BASE_DIR)
 
 # ==================== Configuration ====================
-API_KEY = os.environ.get("WOS_API_KEY") or "a5650a3cf00489bdd8d41011a3eca36de7c668de"
+# API Key resolution: 1. Environment variable (GitHub Actions) -> 2. Local wos_api_key.txt (never pushed to git)
+KEY_FILE = os.path.join(BASE_DIR, "wos_api_key.txt")
+API_KEY = os.environ.get("WOS_API_KEY", "").strip()
+if not API_KEY and os.path.exists(KEY_FILE):
+    try:
+        with open(KEY_FILE, "r", encoding="utf-8") as f:
+            API_KEY = f.read().strip()
+    except Exception:
+        pass
+
+if not API_KEY:
+    print("[ERROR] WOS_API_KEY is missing! Please set the environment variable WOS_API_KEY or save it in wos_api_key.txt")
+    sys.exit(1)
 RESEARCHER_ID = "J-8774-2017"
 BASE_URL = "https://api.clarivate.com/apis/wos-starter/v1/documents"
 IMG_PREFIX = "https://32031610.s21i.faiusr.com/"
