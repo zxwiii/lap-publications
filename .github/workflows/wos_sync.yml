@@ -2,8 +2,8 @@ name: Weekly WoS Publications Auto-Sync
 
 on:
   schedule:
-    # Runs at 00:00 UTC (01:00 AM Beijing Time) every Monday
-    - cron: '0 17 * * *'
+    # Runs at 00:00 UTC (08:00 AM Beijing Time) every Monday
+    - cron: '0 0 * * 1'
   workflow_dispatch:
 
 jobs:
@@ -58,3 +58,9 @@ jobs:
           else
             echo "Notice: GITEE_USER or GITEE_TOKEN secret not set in GitHub. Skipping Gitee push."
           fi
+
+      - name: Purge Global CDN Cache (Real-time Instant Refresh)
+        run: |
+          echo "Purging jsDelivr edge cache for publications_data.js..."
+          curl -s "https://purge.jsdelivr.net/gh/zxwiii/lap-publications@main/publications_data.js" || true
+          echo "CDN cache successfully purged!"
