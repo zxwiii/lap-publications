@@ -62,6 +62,15 @@
 - 任意节点率先返回即刻（约 0.2 秒）渲染完成；
 - 若单个节点网络抖动，2.2 秒内自动无感切换至下一节点，保障全球访客 100% 秒开、永不白屏。
 
+### 5. 期刊更名历史学术精准还原规则 (Journal Renaming Precision Rule)
+针对国际顶级期刊发生官方更名的情况（如 Elsevier 顶级期刊 *Applied Catalysis B: Environmental* 自 2024 年第 345 卷起正式更名为 *Applied Catalysis B: Environment and Energy*），系统统一采用**学术精准还原模式**：
+* **按卷期/年份精准界定**：
+  - 更名前发表的论文（2024 年第 344 卷及以前，2013–2024 年）：忠实保留发表当年的历史官方出版刊名 *Applied Catalysis B: Environmental*；
+  - 更名后发表的论文（2024 年第 345 卷及以后，2025、2026 年）：精准标注为最新官方刊名 *Applied Catalysis B: Environment and Energy*。
+* **前端聚合筛选与徽标统一**：
+  - 前端卡片上的微标统一采用国际通用标准缩写：`Appl. Catal. B`（正则匹配模式统一为 `r"applied\s+catalysis\s+b"`）；
+  - 访客点击卡片上的 `Appl. Catal. B` 徽标或在搜索框输入 `Appl. Catal. B` / `ACB` 时，更名前与更名后的所有论文均会被无缝合并归类检索展示，兼具学术引用的历史严谨性与现代检索的高效统一。
+
 ---
 
 ## 🔒 API Key 安全与权限配置指南
