@@ -94,8 +94,4 @@ Nanostructure and functional group engineering of black phosphorus via plasma tr
 Mo-O-Bi Bonds as interfacial electron transport bridges to fuel CO2 photoreduction via in-situ reconstruction of black Bi2MoO6/BiO2-x heterojunction
 Unique Dual-Sites Boosting Overall CO2 Photoconversion by Hierarchical Electron Harvesters
 Accelerated Photoreduction of CO2 to CO over a Stable Heterostructure with a Seamless Interface
-Exploring deep effects of atomic vacancies on activating CO2 photoreduction via rationally designing indium oxide photocatalysts
-In-situ hydroxyl modification of monolayer black phosphorus for stable photocatalytic carbon dioxide conversion
-Rapid synthesis of ultrathin 2D materials through liquid-nitrogen and microwave treatments
-A Specifically Exposed Cobalt Oxide/Carbon Nitride 2D Heterostructure for Carbon Dioxide Photoreduction
-Hydrothermal synthesis of mpg-C3N4 and Bi2WO6 nest-like structure nanohybrids with enhanced visible light photocatalytic activities
+Understanding and Steering Nitrogen Fate in Photocatalytic Nitrate Reduction
