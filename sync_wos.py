@@ -475,6 +475,9 @@ def run_sync():
             pages = src.get('pages', {}).get('range', '') or src.get('pages', {}).get('begin', '')
         elif src.get('pages'):
             pages = str(src.get('pages'))
+        # 若无传统起止页码，优先提取 WoS 官方电子文章编号 (articleNumber)
+        if not pages:
+            pages = str(src.get('articleNumber', '') or '').strip()
 
         # Crossref enrichment if vol/pages missing
         if doi and (not vol or not pages):
